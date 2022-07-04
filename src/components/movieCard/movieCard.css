@@ -9,15 +9,27 @@
     position: relative;
 }
 
-.movie-card__img {
-    /* max-width: 40%; */
+.movie-card__img-wrapper {
     height: 100%;
+    flex-basis: 330px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center
 }
+
+/* .movie-card__img {
+    width: auto;
+    height: 100%;
+
+} */
 
 .movie-card__info {
     padding: 12px 20px;
     display: flex;
     flex-direction: column;
+    flex-basis: 450px;
+    flex-grow: 2;
 }
 
 .movie-card__title {

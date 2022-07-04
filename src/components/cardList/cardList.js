@@ -4,7 +4,7 @@ import _ from 'lodash'
 
 import './cardlist.css'
 import MoviesServise from '../../services/MoviesServise'
-import MovieCard from '../posterImage/movieCard'
+import MovieCard from '../movieCard/movieCard'
 
 export default class CardList extends Component {
   constructor(props) {

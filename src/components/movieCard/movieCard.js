@@ -1,9 +1,13 @@
 import './movieCard.css'
-import { Card, Col, Rate } from 'antd'
+import { Card, Col, Rate, Image } from 'antd'
 import { format } from 'date-fns'
+
+import noImage from './no-image.webp'
 
 export default function MovieCard({ src, title, description, date, voteAverage }) {
   const imgBase = 'https://image.tmdb.org/t/p/w500'
+
+  const image = src ? imgBase + src : noImage
 
   function trimString(string, cardTitle = '') {
     let trimLength = 185
@@ -22,7 +26,12 @@ export default function MovieCard({ src, title, description, date, voteAverage }
     <Col xs={24} md={12}>
       <Card>
         <div className="movie-card">
-          <img className="movie-card__img" src={imgBase + src} alt={title} />
+          {/* <div className="movie-card__img-wrapper">
+            <img className="movie-card__img" src={imgBase + src} alt={title} />
+          </div> */}
+          <div className="movie-card__img-wrapper">
+            <Image src={image} alt={title} width="100%" />
+          </div>
           <div className="movie-card__info">
             <h5 className="movie-card__title">{title}</h5>
             {formatedDate}
