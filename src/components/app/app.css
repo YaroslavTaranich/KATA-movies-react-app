@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #F7F7F7;
+}
+
+.app {
+    max-width: 1010px;
+    width: 100%;
+    background-color: white;
+    margin: 0 auto;
+    padding: 0 2rem 2rem;
+}
+
+.warning {
+    margin-bottom: 20px;
+}
+
+/* PAGINATION */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.pagination li {
+    border: none;
+    font-size: 12px;
+    line-height: 22px;
+}
+
+.pagination li button.ant-pagination-item-link {
+    border: none;
+    min-width: 20px;
+    height: 20px;
+}
+
+.ant-pagination-item-active {
+    background: #1890FF;
+    border-radius: 4px;
+    min-width: 22px;
+    height: 22px;
+    font-size: 12px;
+}
+
+.ant-pagination-item-active a,
+.ant-pagination-item-active:link a,
+.ant-pagination-item-active:visited a,
+.ant-pagination-item-active:hover a,
+.ant-pagination-item-active:focus a {
+    color: #FFFFFF;
+    font-size: 12px;
+}
+
+.ant-pagination-options {
+    display: none;
+}
