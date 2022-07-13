@@ -14,3 +14,13 @@
     border: 1px solid #D9D9D9;
     border-radius: 4px;
 }
+
+.ant-tabs-top>.ant-tabs-nav:before {
+    left: 50%;
+    width: 160px;
+    transform: translateX(-50%);
+}
+
+.ant-tabs-tab {
+    padding: 12px;
+}

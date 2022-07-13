@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Row, Spin, Alert } from 'antd'
+import { Row, Spin, Alert, Button, Space } from 'antd'
 import _ from 'lodash'
 
 import './cardlist.css'
@@ -12,7 +12,10 @@ export default class CardList extends Component {
     this.moviesServise = new MoviesServise()
     this.state = {
       status: 'loading',
-      data: null,
+      movies: null,
+      ratedMovies: {},
+      ratingError: false,
+      resizeHelper: null,
     }
 
     this.onLoading = () => {
@@ -28,68 +31,145 @@ export default class CardList extends Component {
     }
 
     this.onMoviesLoaded = ({ movies, totalResults }) => {
-      const { totalResultsHandler } = this.props
+      const { totalResultsHandler, selectedTab } = this.props
       totalResultsHandler(totalResults)
       if (totalResults === 0) {
         this.setState({
-          data: null,
-          status: 'noresults',
+          movies: null,
+          status: selectedTab === 'search' ? 'noresults' : 'norated',
         })
       } else {
-        this.setState({ data: movies, status: 'ok' })
+        this.setState({ movies, status: 'ok' })
       }
     }
 
-    this.fetchData = () => {
+    this.getMovies = () => {
       const { pageNumber, searchQuery } = this.props
       this.onLoading()
-      this.moviesServise
-        .searchMovie(pageNumber, searchQuery || 'return')
-        .then(this.onMoviesLoaded)
-        .catch(this.onError)
+      if (searchQuery) {
+        this.moviesServise.searchMovie(pageNumber, searchQuery).then(this.onMoviesLoaded).catch(this.onError)
+      } else {
+        this.moviesServise.getPopularMovie(pageNumber).then(this.onMoviesLoaded).catch(this.onError)
+      }
     }
-    this.debounceFetchData = _.debounce(() => {
+
+    this.debounceSearchMovie = _.debounce(() => {
       const { paginationHandler } = this.props
-      this.fetchData()
+      this.getMovies()
       paginationHandler(1)
     }, 500)
 
+    this.getRaitedMovies = () => {
+      const { pageNumber, guestSessionId } = this.props
+      this.onLoading()
+      this.moviesServise
+        .getRatedMoviesGuestSession(guestSessionId, pageNumber)
+        .then(this.onMoviesLoaded)
+        .catch(this.onError)
+    }
+
     this.renderMovieCards = () => {
-      const { data } = this.state
-      return data.map((movie) => {
-        const { id, title, releaseDate, description, posterSrc, gendersIds, voteAverage } = movie
+      const {
+        movies: { allIds, byId },
+        ratedMovies,
+        resizeHelper,
+      } = this.state
+      return allIds.map((id) => {
+        const { title, releaseDate, description, posterSrc, genresIds, voteAverage } = byId[id]
         return (
           <MovieCard
             key={id}
+            id={id}
             title={title}
             date={releaseDate}
             description={description}
             src={posterSrc}
-            genreIds={gendersIds}
+            genresIds={genresIds}
             voteAverage={voteAverage}
+            movieRatingHandler={this.movieRatingHandler}
+            ratedMovies={ratedMovies}
+            resizeHelper={resizeHelper}
           />
         )
       })
     }
+
+    this.setRating = (movieId, rating, error) => {
+      this.setState(({ ratedMovies }) => ({
+        ratingError: error,
+        ratedMovies: { ...ratedMovies, ...{ [movieId]: rating } },
+      }))
+    }
+
+    this.movieRatingHandler = (movieId, rating) => {
+      const { guestSessionId } = this.props
+      this.setRating(movieId, rating, false)
+      this.moviesServise.setRatingGuest(guestSessionId, movieId, rating).catch(() => {
+        this.setRating(movieId, 0, true)
+      })
+    }
+
+    this.onResize = (e) => {
+      const width = e.target.innerWidth
+      if (width < 1050) {
+        _.debounce(() => {
+          this.setState({ resizeHelper: e.target.innerWidth })
+        }, 500)()
+      }
+    }
   }
 
   componentDidMount() {
-    this.fetchData()
+    this.getMovies()
+    window.addEventListener('resize', this.onResize)
   }
 
   componentDidUpdate(prevProps) {
-    const { pageNumber, searchQuery } = this.props
+    const { pageNumber, searchQuery, selectedTab, guestSessionId } = this.props
     if (pageNumber !== prevProps.pageNumber) {
-      this.fetchData()
+      if (selectedTab === 'search') this.getMovies()
+      if (selectedTab === 'rated') this.getRaitedMovies()
     }
-    if (searchQuery !== prevProps.searchQuery) {
-      this.debounceFetchData()
+    if (searchQuery !== prevProps.searchQuery && selectedTab === 'search') {
+      this.debounceSearchMovie()
+    }
+    if (selectedTab !== prevProps.selectedTab) {
+      if (selectedTab === 'rated') {
+        this.debounceSearchMovie.cancel()
+        this.getRaitedMovies(guestSessionId)
+      }
+      if (selectedTab === 'search') this.getMovies()
+    }
+    if (guestSessionId !== prevProps.guestSessionId) {
+      this.moviesServise.getAllMoviesRatingGuestSession(guestSessionId).then((res) => {
+        this.setState({ ratedMovies: res })
+      })
     }
   }
 
+  componentDidCatch() {
+    this.onError()
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize)
+  }
+
   render() {
-    const { status } = this.state
-    const { searchQuery } = this.props
+    const { status, ratingError } = this.state
+    const { searchQuery, selectedTabHandler } = this.props
+
+    const ratingWarning = ratingError ? (
+      <Alert
+        className="warning"
+        message="Can't set rating for a movie"
+        description="Try again later"
+        type="warning"
+        showIcon
+        closable
+      />
+    ) : null
+
     let content
 
     switch (status) {
@@ -116,10 +196,25 @@ export default class CardList extends Component {
           />
         )
         break
+      case 'norated':
+        content = (
+          <Space size="middle" direction="vertical" align="center">
+            <Alert message="Can't find rated movies" description="Find and rate some!" type="warning" showIcon />
+            <Button size="large" type="primary" onClick={() => selectedTabHandler('search')}>
+              To search!
+            </Button>
+          </Space>
+        )
+        break
       default:
-        content = <Row gutter={[32, 32]}>{this.renderMovieCards()}</Row>
+        content = <Row gutter={[{ md: 32 }, { xs: 20, sm: 24, md: 32 }]}>{this.renderMovieCards()}</Row>
     }
 
-    return <section className="card-list">{content}</section>
+    return (
+      <>
+        {ratingWarning}
+        <section className="card-list">{content}</section>
+      </>
+    )
   }
 }

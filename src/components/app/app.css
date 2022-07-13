@@ -13,8 +13,19 @@ body {
     padding: 0 2rem 2rem;
 }
 
+@media (max-width: 460px) {
+    .app {
+        padding: 0 1rem 1rem;
+    }
+}
+
 .warning {
     margin-bottom: 20px;
+}
+
+.error {
+    margin: 100px auto;
+    width: 800px;
 }
 
 /* PAGINATION */

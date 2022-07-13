@@ -1,50 +1,136 @@
+import React, { Component } from 'react'
 import './movieCard.css'
-import { Card, Col, Rate, Image } from 'antd'
+import { Col, Rate, Image } from 'antd'
 import { format } from 'date-fns'
+
+import GenresContext from '../genresContext'
 
 import noImage from './no-image.webp'
 
-export default function MovieCard({ src, title, description, date, voteAverage }) {
-  const imgBase = 'https://image.tmdb.org/t/p/w500'
+function getGenresNames(ids, genres) {
+  if (!ids || !genres) return null
 
-  const image = src ? imgBase + src : noImage
+  return ids.map((id) => {
+    const key = `genre-${genres[id]}`
+    return (
+      <span key={key} className="genre">
+        {genres[id]}
+      </span>
+    )
+  })
+}
 
-  function trimString(string, cardTitle = '') {
-    let trimLength = 185
-    if (cardTitle.length > 18) trimLength = 150
-    if (cardTitle.length > 36) trimLength = 115
-    if (cardTitle.length > 46) trimLength = 65
-    if (string.length < trimLength) return string
-    const trimed = string.slice(0, trimLength).split(' ')
-    trimed.pop()
-    return [...trimed, '...'].join(' ')
+function ratingColor(rate) {
+  let color = '#66E900'
+  if (rate <= 3) color = '#E90000'
+  if (rate > 3 && rate <= 5) color = '#E97E00'
+  if (rate > 5 && rate <= 7) color = '#E9D100'
+  return {
+    borderColor: color,
+  }
+}
+
+function trimDescription(description, cardRef, headerRef, descriptionRef) {
+  const cardHeight = cardRef.current.offsetHeight
+  const headerHeight = headerRef.current.offsetHeight
+  const descriptionWidth = descriptionRef.current.offsetWidth
+
+  const maxHeight = cardHeight - (headerHeight + 90)
+
+  const k = descriptionWidth > 300 ? 4 : 5.5
+
+  const letersPerLine = Math.floor(descriptionWidth / k)
+
+  const trimLength = Math.floor(letersPerLine * (maxHeight / 22))
+
+  if (trimLength < 0) return null
+  if (description.length < trimLength) return description
+  const trimed = description.slice(0, trimLength).split(' ')
+  trimed.pop()
+  return [...trimed, '...'].join(' ')
+}
+
+export default class MovieCard extends Component {
+  constructor(props) {
+    super(props)
+
+    this.imgBase = 'https://image.tmdb.org/t/p/w500'
+
+    this.cardRef = React.createRef()
+    this.headerRef = React.createRef()
+    this.descriptionRef = React.createRef()
+
+    this.state = {
+      trimedDescription: null,
+    }
   }
 
-  const formatedDate = date ? <div className="movie_card__date">{format(new Date(date), 'PP')}</div> : null
+  componentDidMount() {
+    this.setState({
+      trimedDescription: null,
+    })
+    this.oldContext = null
+  }
 
-  return (
-    <Col xs={24} md={12}>
-      <Card>
-        <div className="movie-card">
-          {/* <div className="movie-card__img-wrapper">
-            <img className="movie-card__img" src={imgBase + src} alt={title} />
-          </div> */}
-          <div className="movie-card__img-wrapper">
-            <Image src={image} alt={title} width="100%" />
-          </div>
-          <div className="movie-card__info">
-            <h5 className="movie-card__title">{title}</h5>
-            {formatedDate}
-            <div className="movie-card__genres">
-              <span className="genre">Action</span>
-              <span className="genre">Drama</span>
+  componentDidUpdate(prevProps) {
+    const { resizeHelper, description } = this.props
+
+    if (resizeHelper !== prevProps.resizeHelper) {
+      this.setState({
+        trimedDescription: trimDescription(description, this.cardRef, this.headerRef, this.descriptionRef),
+      })
+    }
+    if (this.oldContext !== this.context) {
+      this.oldContext = this.context
+      this.setState({
+        trimedDescription: trimDescription(description, this.cardRef, this.headerRef, this.descriptionRef),
+      })
+    }
+  }
+
+  render() {
+    const { id, src, title, date, voteAverage, genresIds, movieRatingHandler, ratedMovies } = this.props
+    const { trimedDescription } = this.state
+
+    const image = src ? this.imgBase + src : noImage
+
+    const formatedDate = date ? <div className="movie_card__date">{format(new Date(date), 'PP')}</div> : null
+
+    return (
+      <GenresContext.Consumer>
+        {(genresList) => (
+          <Col md={12} xs={24}>
+            <div className="movie-card" ref={this.cardRef}>
+              <div className="movie-card__img-wrapper">
+                <Image src={image} alt={title} width="100%" />
+              </div>
+              <div className="movie-card__info">
+                <header className="movie-card__header" ref={this.headerRef}>
+                  <h5 className="movie-card__title">{title}</h5>
+                  {formatedDate}
+                  <div className="movie-card__genres">{getGenresNames(genresIds, genresList)} </div>
+                </header>
+
+                <div className="movie-card__description" ref={this.descriptionRef}>
+                  {trimedDescription}
+                </div>
+                <Rate
+                  className="movie-card__stars"
+                  allowHalf
+                  value={ratedMovies[id]}
+                  count={10}
+                  onChange={(v) => movieRatingHandler(id, v)}
+                />
+                <div className="movie-card__rate" style={ratingColor(voteAverage)}>
+                  {voteAverage}
+                </div>
+              </div>
             </div>
-            <div className="movie-card__description">{trimString(description, title)}</div>
-            <Rate className="movie-card__stars" allowHalf defaultValue={2.5} count={10} />
-            <div className="movie-card__rate">{voteAverage}</div>
-          </div>
-        </div>
-      </Card>
-    </Col>
-  )
+          </Col>
+        )}
+      </GenresContext.Consumer>
+    )
+  }
 }
+
+MovieCard.contextType = GenresContext

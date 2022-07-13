@@ -1,23 +1,37 @@
 import './header.css'
 
-import { Menu, Input } from 'antd'
+import { Tabs, Input } from 'antd'
+import React, { Component } from 'react'
 
-export default function Header({ inputHandler, inputValue }) {
-  const menuItems = [
-    { label: 'Search', key: 'search' },
-    { label: 'Rated', key: 'rated' },
-  ]
+const { TabPane } = Tabs
 
-  return (
-    <header className="header">
-      <Menu items={menuItems} mode="horizontal" defaultSelectedKeys={['search']} className="header__menu" />
+export default class Header extends Component {
+  constructor(props) {
+    super(props)
+    this.inputRef = React.createRef()
+  }
 
-      <Input
-        className="header__search"
-        placeholder="Type to search..."
-        value={inputValue}
-        onChange={(e) => inputHandler(e.target.value)}
-      />
-    </header>
-  )
+  componentDidMount() {
+    this.inputRef.current.focus()
+  }
+
+  render() {
+    const { inputHandler, inputValue, selectedTab, selectedTabHandler } = this.props
+    return (
+      <header className="header">
+        <Tabs activeKey={selectedTab} centered onChange={(key) => selectedTabHandler(key)}>
+          <TabPane tab="Search" key="search">
+            <Input
+              ref={this.inputRef}
+              className="header__search"
+              placeholder="Type to search..."
+              value={inputValue}
+              onChange={(e) => inputHandler(e.target.value)}
+            />
+          </TabPane>
+          <TabPane tab="Rated" key="rated" />
+        </Tabs>
+      </header>
+    )
+  }
 }
