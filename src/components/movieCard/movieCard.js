@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { PropTypes } from 'prop-types'
 import './movieCard.css'
 import { Col, Rate, Image } from 'antd'
 import { format } from 'date-fns'
@@ -134,3 +135,19 @@ export default class MovieCard extends Component {
 }
 
 MovieCard.contextType = GenresContext
+
+MovieCard.defaultProps = {
+  resizeHelper: null,
+}
+
+MovieCard.propTypes = {
+  id: PropTypes.number.isRequired,
+  src: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  date: PropTypes.string.isRequired,
+  voteAverage: PropTypes.number.isRequired,
+  genresIds: PropTypes.arrayOf(PropTypes.number).isRequired,
+  movieRatingHandler: PropTypes.func.isRequired,
+  ratedMovies: PropTypes.objectOf(PropTypes.number).isRequired,
+  resizeHelper: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
+}

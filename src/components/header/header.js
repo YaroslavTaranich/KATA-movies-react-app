@@ -1,7 +1,7 @@
-import './header.css'
-
-import { Tabs, Input } from 'antd'
 import React, { Component } from 'react'
+import { PropTypes } from 'prop-types'
+import { Tabs, Input } from 'antd'
+import './header.css'
 
 const { TabPane } = Tabs
 
@@ -34,4 +34,16 @@ export default class Header extends Component {
       </header>
     )
   }
+}
+
+Header.defaultProps = {
+  selectedTab: 'search',
+  inputValue: '',
+}
+
+Header.propTypes = {
+  inputValue: PropTypes.string,
+  selectedTab: PropTypes.string,
+  inputHandler: PropTypes.func.isRequired,
+  selectedTabHandler: PropTypes.func.isRequired,
 }

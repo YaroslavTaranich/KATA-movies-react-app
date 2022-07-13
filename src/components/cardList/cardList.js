@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { PropTypes } from 'prop-types'
 import { Row, Spin, Alert, Button, Space } from 'antd'
 import _ from 'lodash'
 
@@ -53,7 +54,7 @@ export default class CardList extends Component {
       }
     }
 
-    this.debounceSearchMovie = _.debounce(() => {
+    this.debounceGetMovies = _.debounce(() => {
       const { paginationHandler } = this.props
       this.getMovies()
       paginationHandler(1)
@@ -131,11 +132,11 @@ export default class CardList extends Component {
       if (selectedTab === 'rated') this.getRaitedMovies()
     }
     if (searchQuery !== prevProps.searchQuery && selectedTab === 'search') {
-      this.debounceSearchMovie()
+      this.debounceGetMovies()
     }
     if (selectedTab !== prevProps.selectedTab) {
       if (selectedTab === 'rated') {
-        this.debounceSearchMovie.cancel()
+        this.debounceGetMovies.cancel()
         this.getRaitedMovies(guestSessionId)
       }
       if (selectedTab === 'search') this.getMovies()
@@ -217,4 +218,18 @@ export default class CardList extends Component {
       </>
     )
   }
+}
+
+CardList.defaultProps = {
+  guestSessionId: null,
+}
+
+CardList.propTypes = {
+  guestSessionId: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+  pageNumber: PropTypes.number.isRequired,
+  searchQuery: PropTypes.string.isRequired,
+  selectedTab: PropTypes.string.isRequired,
+  paginationHandler: PropTypes.func.isRequired,
+  selectedTabHandler: PropTypes.func.isRequired,
+  totalResultsHandler: PropTypes.func.isRequired,
 }
