@@ -103,7 +103,7 @@ export default class MovieCard extends Component {
           <Col md={12} xs={24}>
             <div className="movie-card" ref={this.cardRef}>
               <div className="movie-card__img-wrapper">
-                <Image src={image} alt={title} width="100%" />
+                <Image src={image} alt={title} width="100%" preview={Boolean(src)} />
               </div>
               <div className="movie-card__info">
                 <header className="movie-card__header" ref={this.headerRef}>
@@ -138,13 +138,15 @@ MovieCard.contextType = GenresContext
 
 MovieCard.defaultProps = {
   resizeHelper: null,
+  date: '',
+  src: '',
 }
 
 MovieCard.propTypes = {
   id: PropTypes.number.isRequired,
-  src: PropTypes.string.isRequired,
+  src: PropTypes.string,
   title: PropTypes.string.isRequired,
-  date: PropTypes.string.isRequired,
+  date: PropTypes.string,
   voteAverage: PropTypes.number.isRequired,
   genresIds: PropTypes.arrayOf(PropTypes.number).isRequired,
   movieRatingHandler: PropTypes.func.isRequired,

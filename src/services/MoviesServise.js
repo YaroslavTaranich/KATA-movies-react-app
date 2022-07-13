@@ -1,13 +1,18 @@
-import { tokenAPI } from './APIkey'
+import { tokenAPI, keyAPI } from './APIkey'
 
 export default class MoviesServise {
   constructor() {
     this.baseURL = 'https://api.themoviedb.org/3'
 
-    this.headers = {
+    this.headersWithToken = {
       'Content-Type': 'application/json;charset=utf-8',
       Authorization: `Bearer  ${tokenAPI}`,
     }
+    this.headers = {
+      'Content-Type': 'application/json;charset=utf-8',
+    }
+
+    this.qureyAuthentication = `api_key=${keyAPI}`
 
     this.getFetchOptions = {
       method: 'GET',
@@ -15,7 +20,7 @@ export default class MoviesServise {
       redirect: 'follow',
     }
 
-    this.formatSearchingMovies = (data) => ({
+    this.formatMovies = (data) => ({
       byId: data.reduce((acc, movie) => {
         acc[movie.id] = {
           id: movie.id,
@@ -42,24 +47,36 @@ export default class MoviesServise {
       return body
     }
 
+    // поиск не работает в проде из-за редиректов
+    // this.searchMovie = async (page, query) => {
+    //   const body = await this.fetchJsonData(`/search/movie/?${this.qureyAuthentication}&query=${query}&page=${page}`)
+    //   return {
+    //     movies: this.formatMovies(body.results),
+    //     totalResults: body.total_results,
+    //     totalPages: body.totalPages,
+    //   }
+    // }
+
+    // редиректит на этот хост
     this.searchMovie = async (page, query) => {
-      const body = await this.fetchJsonData(`/search/movie/?query=${query}&page=${page}`)
+      const res = await fetch(
+        `https://d2nsx85y22o8i8.cloudfront.net/3/search/movie?${this.qureyAuthentication}&query=${query}&page=${page}`,
+        this.getFetchOptions
+      )
+      if (!res.ok) throw new Error('Fetching faild')
+      const body = await res.json()
+
       return {
-        movies: this.formatSearchingMovies(body.results),
+        movies: this.formatMovies(body.results),
         totalResults: body.total_results,
         totalPages: body.totalPages,
       }
     }
 
-    this.getMovie = async (id) => {
-      const body = await this.fetchJsonData(`/movie/${id}`)
-      return body
-    }
-
     this.getPopularMovie = async (page) => {
-      const body = await this.fetchJsonData(`/movie/popular?page=${page}`)
+      const body = await this.fetchJsonData(`/movie/popular?${this.qureyAuthentication}&page=${page}`)
       return {
-        movies: this.formatSearchingMovies(body.results),
+        movies: this.formatMovies(body.results),
         totalResults: body.total_results,
         totalPages: body.totalPages,
       }
@@ -71,20 +88,22 @@ export default class MoviesServise {
 
       if (isAlive) return sessionId
 
-      const body = await this.fetchJsonData('/authentication/guest_session/new')
+      const body = await this.fetchJsonData(`/authentication/guest_session/new?${this.qureyAuthentication}`)
       localStorage.setItem('guestSessionId', body.guest_session_id)
       return body.guest_session_id
     }
 
     this.checkGuestSesion = async (sessionId) => {
-      const body = await this.fetchJsonData(`/guest_session/${sessionId}`)
+      const body = await this.fetchJsonData(`/guest_session/${sessionId}?${this.qureyAuthentication}`)
       return body.success
     }
 
     this.getRatedMoviesGuestSession = async (sessionId, page = 1) => {
-      const body = await this.fetchJsonData(`/guest_session/${sessionId}/rated/movies?page=${page}`)
+      const body = await this.fetchJsonData(
+        `/guest_session/${sessionId}/rated/movies?page=${page}&${this.qureyAuthentication}`
+      )
       return {
-        movies: this.formatSearchingMovies(body.results),
+        movies: this.formatMovies(body.results),
         totalResults: body.total_results,
         totalPages: body.total_pages,
       }
@@ -124,12 +143,15 @@ export default class MoviesServise {
         redirect: 'follow',
         body: postBody,
       }
-      const body = await this.fetchJsonData(`/movie/${movieId}/rating?guest_session_id=${sessionId}`, options)
+      const body = await this.fetchJsonData(
+        `/movie/${movieId}/rating?guest_session_id=${sessionId}&${this.qureyAuthentication}`,
+        options
+      )
       return body.success
     }
 
     this.getGenres = async () => {
-      const body = await this.fetchJsonData('/genre/movie/list')
+      const body = await this.fetchJsonData(`/genre/movie/list?${this.qureyAuthentication}`)
       return body.genres.reduce((acc, genre) => {
         acc[genre.id] = genre.name
         return acc

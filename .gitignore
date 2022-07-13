@@ -25,3 +25,4 @@ yarn-error.log*
 #API key 
 
 /src/services/APIkey.js
+.vercel
