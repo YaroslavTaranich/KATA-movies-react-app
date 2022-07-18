@@ -9,6 +9,9 @@ export default class Header extends Component {
   constructor(props) {
     super(props)
     this.inputRef = React.createRef()
+    this.state = {
+      prevPage: 1,
+    }
   }
 
   componentDidMount() {
@@ -23,9 +26,12 @@ export default class Header extends Component {
   }
 
   onTabSelect = (key) => {
-    const { paginationHandler, selectedTabHandler } = this.props
+    const { paginationHandler, selectedTabHandler, pageNumber } = this.props
+    const { prevPage } = this.state
     selectedTabHandler(key)
-    paginationHandler(1)
+    paginationHandler(prevPage)
+    this.setState({ prevPage: pageNumber })
+    console.log('prevPage', prevPage)
   }
 
   render() {

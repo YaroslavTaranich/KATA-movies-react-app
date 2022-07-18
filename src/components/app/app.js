@@ -79,8 +79,9 @@ export default class App extends Component {
           inputHandler={this.inputHandler}
           inputValue={searchQuery}
           selectedTabHandler={this.selectedTabHandler}
-          paginationHandler={this.paginationHandler}
           selectedTab={selectedTab}
+          paginationHandler={this.paginationHandler}
+          pageNumber={pageNumber}
         />
         <Offline>
           <Alert
