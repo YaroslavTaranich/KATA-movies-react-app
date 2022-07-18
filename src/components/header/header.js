@@ -15,11 +15,24 @@ export default class Header extends Component {
     this.inputRef.current.focus()
   }
 
+  componentDidUpdate(prevProps) {
+    const { selectedTab } = this.props
+    if (selectedTab !== prevProps.selectedTab && selectedTab === 'search') {
+      this.inputRef.current.focus()
+    }
+  }
+
+  onTabSelect = (key) => {
+    const { paginationHandler, selectedTabHandler } = this.props
+    selectedTabHandler(key)
+    paginationHandler(1)
+  }
+
   render() {
-    const { inputHandler, inputValue, selectedTab, selectedTabHandler } = this.props
+    const { inputHandler, inputValue, selectedTab } = this.props
     return (
       <header className="header">
-        <Tabs activeKey={selectedTab} centered onChange={(key) => selectedTabHandler(key)}>
+        <Tabs activeKey={selectedTab} centered onChange={this.onTabSelect}>
           <TabPane tab="Search" key="search">
             <Input
               ref={this.inputRef}

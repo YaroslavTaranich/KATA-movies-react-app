@@ -8,6 +8,12 @@ import MoviesServise from '../../services/MoviesServise'
 import MovieCard from '../movieCard/movieCard'
 
 export default class CardList extends Component {
+  debounceGetMovies = _.debounce(() => {
+    const { paginationHandler } = this.props
+    this.getMovies()
+    paginationHandler(1)
+  }, 500)
+
   constructor(props) {
     super(props)
     this.moviesServise = new MoviesServise()
@@ -18,106 +24,6 @@ export default class CardList extends Component {
       ratingError: false,
       resizeHelper: null,
     }
-
-    this.onLoading = () => {
-      this.setState({
-        status: 'loading',
-      })
-    }
-
-    this.onError = () => {
-      this.setState({
-        status: 'error',
-      })
-    }
-
-    this.onMoviesLoaded = ({ movies, totalResults }) => {
-      const { totalResultsHandler, selectedTab } = this.props
-      totalResultsHandler(totalResults)
-      if (totalResults === 0) {
-        this.setState({
-          movies: null,
-          status: selectedTab === 'search' ? 'noresults' : 'norated',
-        })
-      } else {
-        this.setState({ movies, status: 'ok' })
-      }
-    }
-
-    this.getMovies = () => {
-      const { pageNumber, searchQuery } = this.props
-      this.onLoading()
-      if (searchQuery) {
-        this.moviesServise.searchMovie(pageNumber, searchQuery).then(this.onMoviesLoaded).catch(this.onError)
-      } else {
-        this.moviesServise.getPopularMovie(pageNumber).then(this.onMoviesLoaded).catch(this.onError)
-      }
-    }
-
-    this.debounceGetMovies = _.debounce(() => {
-      const { paginationHandler } = this.props
-      this.getMovies()
-      paginationHandler(1)
-    }, 500)
-
-    this.getRaitedMovies = () => {
-      const { pageNumber, guestSessionId } = this.props
-      this.onLoading()
-      this.moviesServise
-        .getRatedMoviesGuestSession(guestSessionId, pageNumber)
-        .then(this.onMoviesLoaded)
-        .catch(this.onError)
-    }
-
-    this.renderMovieCards = () => {
-      const {
-        movies: { allIds, byId },
-        ratedMovies,
-        resizeHelper,
-      } = this.state
-      return allIds.map((id) => {
-        const { title, releaseDate, description, posterSrc, genresIds, voteAverage } = byId[id]
-        return (
-          <MovieCard
-            key={id}
-            id={id}
-            title={title}
-            date={releaseDate}
-            description={description}
-            src={posterSrc}
-            genresIds={genresIds}
-            voteAverage={voteAverage}
-            movieRatingHandler={this.movieRatingHandler}
-            ratedMovies={ratedMovies}
-            resizeHelper={resizeHelper}
-          />
-        )
-      })
-    }
-
-    this.setRating = (movieId, rating, error) => {
-      this.setState(({ ratedMovies }) => ({
-        ratingError: error,
-        ratedMovies: { ...ratedMovies, ...{ [movieId]: rating } },
-      }))
-    }
-
-    this.movieRatingHandler = (movieId, rating) => {
-      const { guestSessionId } = this.props
-      this.setRating(movieId, rating, false)
-      this.moviesServise.setRatingGuest(guestSessionId, movieId, rating).catch(() => {
-        this.setRating(movieId, 0, true)
-      })
-    }
-
-    this.onResize = (e) => {
-      const width = e.target.innerWidth
-      if (width < 1050) {
-        _.debounce(() => {
-          this.setState({ resizeHelper: e.target.innerWidth })
-        }, 500)()
-      }
-    }
   }
 
   componentDidMount() {
@@ -127,7 +33,7 @@ export default class CardList extends Component {
 
   componentDidUpdate(prevProps) {
     const { pageNumber, searchQuery, selectedTab, guestSessionId } = this.props
-    if (pageNumber !== prevProps.pageNumber) {
+    if (pageNumber !== prevProps.pageNumber && selectedTab === prevProps.selectedTab) {
       if (selectedTab === 'search') this.getMovies()
       if (selectedTab === 'rated') this.getRaitedMovies()
     }
@@ -137,7 +43,7 @@ export default class CardList extends Component {
     if (selectedTab !== prevProps.selectedTab) {
       if (selectedTab === 'rated') {
         this.debounceGetMovies.cancel()
-        this.getRaitedMovies(guestSessionId)
+        this.getRaitedMovies()
       }
       if (selectedTab === 'search') this.getMovies()
     }
@@ -154,6 +60,100 @@ export default class CardList extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.onResize)
+  }
+
+  onLoading = () => {
+    this.setState({
+      status: 'loading',
+    })
+  }
+
+  onError = () => {
+    this.setState({
+      status: 'error',
+    })
+  }
+
+  onMoviesLoaded = ({ movies, totalResults }) => {
+    const { totalResultsHandler, selectedTab } = this.props
+    totalResultsHandler(totalResults)
+    if (totalResults === 0) {
+      this.setState({
+        movies: null,
+        status: selectedTab === 'search' ? 'noresults' : 'norated',
+      })
+    } else {
+      this.setState({ movies, status: 'ok' })
+    }
+  }
+
+  getMovies = () => {
+    const { pageNumber, searchQuery } = this.props
+    this.onLoading()
+    if (searchQuery) {
+      this.moviesServise.searchMovie(pageNumber, searchQuery).then(this.onMoviesLoaded).catch(this.onError)
+    } else {
+      this.moviesServise.getPopularMovie(pageNumber).then(this.onMoviesLoaded).catch(this.onError)
+    }
+  }
+
+  getRaitedMovies = () => {
+    const { pageNumber, guestSessionId } = this.props
+    this.onLoading()
+    this.moviesServise
+      .getRatedMoviesGuestSession(guestSessionId, pageNumber)
+      .then(this.onMoviesLoaded)
+      .catch(this.onError)
+  }
+
+  renderMovieCards = () => {
+    const {
+      movies: { allIds, byId },
+      ratedMovies,
+      resizeHelper,
+    } = this.state
+    return allIds.map((id) => {
+      const { title, releaseDate, description, posterSrc, genresIds, voteAverage } = byId[id]
+      return (
+        <MovieCard
+          key={id}
+          id={id}
+          title={title}
+          date={releaseDate}
+          description={description}
+          src={posterSrc}
+          genresIds={genresIds}
+          voteAverage={voteAverage}
+          movieRatingHandler={this.movieRatingHandler}
+          ratedMovies={ratedMovies}
+          resizeHelper={resizeHelper}
+        />
+      )
+    })
+  }
+
+  setRating = (movieId, rating, error) => {
+    this.setState(({ ratedMovies }) => ({
+      ratingError: error,
+      ratedMovies: { ...ratedMovies, ...{ [movieId]: rating } },
+    }))
+  }
+
+  movieRatingHandler = (movieId, rating) => {
+    const { guestSessionId } = this.props
+    this.setRating(movieId, rating, false)
+    this.moviesServise.setRatingGuest(guestSessionId, movieId, rating).catch(() => {
+      this.setRating(movieId, 0, true)
+    })
+  }
+
+  onResize = (e) => {
+    const width = e.target.innerWidth
+    if (width < 1050) {
+      _.debounce(() => {
+        this.setState({ resizeHelper: e.target.innerWidth })
+      }, 500)()
+    }
   }
 
   render() {

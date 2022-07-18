@@ -24,24 +24,6 @@ export default class App extends Component {
       genresList: null,
       isError: false,
     }
-
-    this.makeHandler = (entery, value) => {
-      this.setState({
-        [entery]: value,
-      })
-    }
-
-    this.paginationHandler = (pageNumber) => this.makeHandler('pageNumber', pageNumber)
-
-    this.totalResultsHandler = (count) => this.makeHandler('totalResults', count)
-
-    this.inputHandler = (value) => this.makeHandler('searchQuery', value)
-
-    this.selectedTabHandler = (value) => this.makeHandler('selectedTab', value)
-
-    this.genresListHandler = (obj) => this.makeHandler('genresList', obj)
-
-    this.guestSessionIdHandler = (id) => this.makeHandler('guestSessionId', id)
   }
 
   componentDidMount() {
@@ -54,16 +36,27 @@ export default class App extends Component {
     })
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    const { selectedTab } = this.state
-    if (selectedTab !== prevState.selectedTab) {
-      this.setState({ pageNumber: 1, searchQuery: '' })
-    }
-  }
-
   componentDidCatch() {
     this.setState({ isError: true })
   }
+
+  makeHandler = (entery, value) => {
+    this.setState({
+      [entery]: value,
+    })
+  }
+
+  paginationHandler = (pageNumber) => this.makeHandler('pageNumber', pageNumber)
+
+  totalResultsHandler = (count) => this.makeHandler('totalResults', count)
+
+  inputHandler = (value) => this.makeHandler('searchQuery', value)
+
+  selectedTabHandler = (value) => this.makeHandler('selectedTab', value)
+
+  genresListHandler = (obj) => this.makeHandler('genresList', obj)
+
+  guestSessionIdHandler = (id) => this.makeHandler('guestSessionId', id)
 
   render() {
     const { pageNumber, totalResults, searchQuery, selectedTab, guestSessionId, genresList, isError } = this.state
@@ -86,6 +79,7 @@ export default class App extends Component {
           inputHandler={this.inputHandler}
           inputValue={searchQuery}
           selectedTabHandler={this.selectedTabHandler}
+          paginationHandler={this.paginationHandler}
           selectedTab={selectedTab}
         />
         <Offline>
